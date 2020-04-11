@@ -1,4 +1,4 @@
-import React, { useReducer, useCallback } from 'react';
+import React, { useReducer, useCallback, useContext } from 'react';
 
 // React.memo
 // useMemo: call the function only if the args are different
@@ -10,6 +10,7 @@ import Grudges from './Grudges';
 import NewGrudge from './NewGrudge';
 
 import initialState from './initialState';
+import { GrudgeContext } from './GrudgeContext';
 
 const GRUDGE_ADD = 'GRUDGE_ADD';
 const GRUDGE_FORGIVE = 'GRUDGE_FORGIVE';
@@ -78,9 +79,17 @@ const Application = () => {
   //   </div>
   // );
 
+  const { undo, isPast } = useContext(GrudgeContext);
+
   return (
     <div className="Application">
       <NewGrudge />
+      <section>
+        <button disabled={!isPast} onClick={undo}>
+          Undo
+        </button>
+        <button>Redo</button>
+      </section>
       <Grudges />
     </div>
   );

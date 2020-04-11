@@ -7,22 +7,53 @@ export const GrudgeContext = createContext();
 
 const GRUDGE_ADD = 'GRUDGE_ADD';
 const GRUDGE_FORGIVE = 'GRUDGE_FORGIVE';
+const UNDO = 'UNDO';
 
-const reducer = (state, action) => {
+const defaultState = {
+  past: [],
+  present: initialState,
+  future: []
+};
+
+const reducer = (state = defaultState, action) => {
   if (action.type === GRUDGE_ADD) {
-    return [action.payload, ...state];
+    // return [action.payload, ...state];
+    const newPresent = [action.payload, ...state.present];
+    return {
+      past: [...state.present, ...state.past],
+      present: newPresent,
+      future: []
+    };
   }
+
   if (action.type === GRUDGE_FORGIVE) {
-    return state.map(item => {
+    const newPresent = state.present.map(item => {
       if (item.id !== action.payload) return item;
       return { ...item, forgiven: !item.forgiven };
     });
+    return {
+      past: [...state.present, ...state.past],
+      present: newPresent,
+      future: []
+    };
+  }
+
+  if (action.type === UNDO) {
+    const [newPresent, ...newPast] = state.past;
+    return {
+      past: newPast,
+      present: newPresent,
+      future: [state.present, ...state.future]
+    };
   }
   return state;
 };
 
 export const GrudgeProvider = ({ children }) => {
-  const [grudges, dispatch] = useReducer(reducer, initialState);
+  const [state, dispatch] = useReducer(reducer, defaultState);
+  const grudges = state.present;
+  const isPast = !!state.past.length;
+  const isFuture = !!state.future.length;
 
   const addGrudge = useCallback(
     ({ person, reason }) => {
@@ -49,7 +80,18 @@ export const GrudgeProvider = ({ children }) => {
     [dispatch]
   );
 
-  const value = { grudges, addGrudge, toggleForgiveness };
+  const undo = useCallback(() => {
+    dispatch({ type: UNDO });
+  }, [dispatch]);
+
+  const value = {
+    grudges: state.present,
+    addGrudge,
+    toggleForgiveness,
+    undo,
+    isPast,
+    isFuture
+  };
 
   return (
     <GrudgeContext.Provider value={value}>{children}</GrudgeContext.Provider>
